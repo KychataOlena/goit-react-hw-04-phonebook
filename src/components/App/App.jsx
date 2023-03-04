@@ -1,88 +1,70 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { nanoid } from 'nanoid';
 import { ContactForm } from '../ContactForm/ContactForm';
 import { ContactList } from '../ContactList/ContactList';
 import { Filter } from '../Filter/Filter';
 import { Wrapper, MainTitle } from './App.styled';
 
-export class App extends Component {
-  state = {
-    contacts: [
-      // { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      // { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      // { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      // { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
-  };
+export const App = () => {
+  const [contacts, setContacts] = useState([
+    { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
+    { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
+    { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
+    { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
+  ]);
+  const [filter, setFilter] = useState('');
+  const isFirstRender = useRef(true);
 
-  formSubmitHandler = data => {
-    console.log(data);
-    // console.log(nanoid());
+  const formSubmitHandler = (name, number) => {
     const contact = {
       id: nanoid(),
-      name: data.name,
-      number: data.number,
+      name: name,
+      number: number,
     };
-
-    if (this.state.contacts.find(con => con.name === data.name)) {
-      return alert(`${data.name} is already in contacts.`);
-    } else {
-      this.setState(prevState => ({
-        contacts: [contact, ...prevState.contacts],
-      }));
-    }
+    setContacts(state => [contact, ...state]);
   };
 
-  deletedContact = contactId => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(contact => contact.id !== contactId),
-    }));
+  const deletedContact = contactId => {
+    setContacts(state => state.filter(contact => contact.id !== contactId));
   };
 
-  changeFilter = e => {
-    this.setState({ filter: e.currentTarget.value });
+  const changeFilter = e => {
+    setFilter(e.currentTarget.value);
   };
 
-  getVisibleContacts = () => {
-    const { filter, contacts } = this.state;
+  const getVisibleContacts = () => {
     const normilizeFilter = filter.toLowerCase();
-
     return contacts.filter(contact =>
       contact.name.toLowerCase().includes(normilizeFilter)
     );
   };
 
-  componentDidMount() {
+  useEffect(() => {
     const contacts = localStorage.getItem('contacts');
     const parsedContact = JSON.parse(contacts);
-
     if (parsedContact) {
-      this.setState({ contacts: parsedContact });
+      setContacts(parsedContact);
     }
-  }
+  }, []);
 
-  componentDidUpdate(prevProps, prevState) {
-    console.log('App componentDidUpdate');
-    if (this.state.contacts !== prevState.contacts);
-    console.log('update');
-    localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
-  }
-  render() {
-    const { filter } = this.state;
-    const visibleContacts = this.getVisibleContacts();
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
 
-    return (
-      <Wrapper>
-        <MainTitle>Phonebook</MainTitle>
-        <ContactForm onSubmit={this.formSubmitHandler} />
-        <h2>Contacts</h2>
-        <Filter filter={filter} onChange={this.changeFilter} />
-        <ContactList
-          contacts={visibleContacts}
-          onDeletedContact={this.deletedContact}
-        />
-      </Wrapper>
-    );
-  }
-}
+  return (
+    <Wrapper>
+      <MainTitle>Phonebook</MainTitle>
+      <ContactForm onSubmit={formSubmitHandler} contacts={contacts} />
+      <h2>Contacts</h2>
+      <Filter filter={filter} onChange={changeFilter} />
+      <ContactList
+        contacts={getVisibleContacts()}
+        onDeletedContact={deletedContact}
+      />
+    </Wrapper>
+  );
+};
