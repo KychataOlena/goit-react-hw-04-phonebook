@@ -21,7 +21,11 @@ export const App = () => {
       name: name,
       number: number,
     };
-    setContacts(state => [contact, ...state]);
+    if (contacts.find(con => con.name === name)) {
+      return alert(`${name} is already in contacts.`);
+    } else {
+      setContacts(state => [contact, ...state]);
+    }
   };
 
   const deletedContact = contactId => {
